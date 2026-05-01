@@ -1,1 +1,628 @@
+<!DOCTYPE html>
 
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マイカー費用ダッシュボード</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a22;
+    --surface2: #1e2430;
+    --border: #2a3040;
+    --accent: #4ade80;
+    --accent2: #f59e0b;
+    --danger: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --card-radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+/* Header */
+.header {
+background: linear-gradient(135deg, #1a2035 0%, #0d1520 100%);
+border-bottom: 1px solid var(–border);
+padding: 20px 20px 16px;
+position: sticky; top: 0; z-index: 100;
+}
+.header h1 {
+font-family: ‘Space Mono’, monospace;
+font-size: 18px;
+color: var(–accent);
+letter-spacing: 0.05em;
+}
+.header p { font-size: 12px; color: var(–muted); margin-top: 2px; }
+
+/* Tab nav */
+.tab-nav {
+display: flex;
+gap: 4px;
+padding: 12px 16px;
+background: var(–surface);
+border-bottom: 1px solid var(–border);
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+white-space: nowrap;
+padding: 7px 14px;
+border-radius: 20px;
+border: 1px solid var(–border);
+background: transparent;
+color: var(–muted);
+font-size: 12px;
+cursor: pointer;
+transition: all 0.2s;
+font-family: ‘Noto Sans JP’, sans-serif;
+}
+.tab-btn.active {
+background: var(–accent);
+color: #0d0f14;
+border-color: var(–accent);
+font-weight: 700;
+}
+
+/* Content */
+.content { padding: 16px; display: none; }
+.content.active { display: block; }
+
+/* Cards */
+.card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: var(–card-radius);
+padding: 16px;
+margin-bottom: 12px;
+}
+.card-label {
+font-size: 11px;
+color: var(–muted);
+letter-spacing: 0.08em;
+text-transform: uppercase;
+margin-bottom: 6px;
+}
+.card-value {
+font-family: ‘Space Mono’, monospace;
+font-size: 26px;
+font-weight: 700;
+color: var(–accent);
+}
+.card-sub { font-size: 12px; color: var(–muted); margin-top: 4px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+
+/* Section title */
+.section-title {
+font-size: 13px;
+font-weight: 700;
+color: var(–text);
+margin: 20px 0 10px;
+padding-left: 10px;
+border-left: 3px solid var(–accent);
+}
+
+/* Car timeline */
+.timeline { position: relative; }
+.tl-item {
+display: flex;
+gap: 12px;
+margin-bottom: 16px;
+position: relative;
+}
+.tl-dot {
+width: 12px; height: 12px;
+border-radius: 50%;
+background: var(–accent);
+margin-top: 4px;
+flex-shrink: 0;
+position: relative;
+z-index: 1;
+}
+.tl-dot.past { background: var(–muted); }
+.tl-dot.current { background: var(–accent2); box-shadow: 0 0 8px var(–accent2); }
+.tl-line {
+position: absolute;
+left: 5px; top: 16px;
+width: 2px;
+height: calc(100% + 4px);
+background: var(–border);
+}
+.tl-body { flex: 1; }
+.tl-name { font-size: 14px; font-weight: 700; }
+.tl-period { font-size: 11px; color: var(–muted); }
+.tl-cost {
+font-family: ‘Space Mono’, monospace;
+font-size: 13px;
+color: var(–accent);
+margin-top: 2px;
+}
+.tl-detail {
+font-size: 11px; color: var(–muted); margin-top: 4px;
+background: var(–surface2);
+padding: 8px 10px;
+border-radius: 8px;
+line-height: 1.8;
+}
+
+/* Bar chart */
+.bar-chart { margin-top: 8px; }
+.bar-row {
+display: flex; align-items: center; gap: 8px;
+margin-bottom: 8px;
+}
+.bar-label { font-size: 11px; color: var(–muted); width: 100px; flex-shrink: 0; text-align: right; }
+.bar-track { flex: 1; height: 8px; background: var(–surface2); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.bar-val { font-family: ‘Space Mono’, monospace; font-size: 10px; color: var(–muted); width: 60px; flex-shrink: 0; }
+
+/* Tips */
+.tip-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 14px;
+margin-bottom: 10px;
+display: flex;
+gap: 12px;
+align-items: flex-start;
+}
+.tip-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.tip-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.tip-body { font-size: 12px; color: var(–muted); line-height: 1.7; }
+.tip-save {
+font-family: ‘Space Mono’, monospace;
+font-size: 11px;
+color: var(–accent);
+margin-top: 6px;
+background: rgba(74,222,128,0.1);
+padding: 3px 8px;
+border-radius: 4px;
+display: inline-block;
+}
+
+/* Badge */
+.badge {
+display: inline-block;
+padding: 2px 8px;
+border-radius: 4px;
+font-size: 10px;
+font-weight: 700;
+}
+.badge-warn { background: rgba(245,158,11,0.15); color: var(–accent2); }
+.badge-ok { background: rgba(74,222,128,0.15); color: var(–accent); }
+.badge-red { background: rgba(248,113,113,0.15); color: var(–danger); }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th {
+text-align: left; padding: 8px 10px;
+background: var(–surface2);
+color: var(–muted);
+font-size: 10px;
+letter-spacing: 0.06em;
+text-transform: uppercase;
+}
+.data-table td { padding: 10px; border-bottom: 1px solid var(–border); }
+.data-table tr:last-child td { border-bottom: none; }
+.num { font-family: ‘Space Mono’, monospace; }
+
+/* Current car highlight */
+.current-car-banner {
+background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+border: 1px solid rgba(245,158,11,0.3);
+border-radius: var(–card-radius);
+padding: 16px;
+margin-bottom: 12px;
+}
+.current-car-banner .label { font-size: 10px; color: var(–accent2); letter-spacing: 0.1em; text-transform: uppercase; }
+.current-car-banner .name { font-size: 22px; font-weight: 700; margin-top: 2px; }
+.current-car-banner .period { font-size: 12px; color: var(–muted); margin-top: 2px; }
+
+/* Projection chart */
+.proj-chart {
+display: flex;
+align-items: flex-end;
+gap: 6px;
+height: 100px;
+margin-top: 10px;
+padding: 0 4px;
+}
+.proj-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.proj-bar { width: 100%; border-radius: 4px 4px 0 0; background: var(–border); position: relative; transition: height 0.8s ease; }
+.proj-bar.accent { background: linear-gradient(180deg, var(–accent) 0%, rgba(74,222,128,0.4) 100%); }
+.proj-bar.warn { background: linear-gradient(180deg, var(–accent2) 0%, rgba(245,158,11,0.3) 100%); }
+.proj-label { font-size: 9px; color: var(–muted); text-align: center; }
+</style>
+
+</head>
+<body>
+
+<div class="header">
+  <h1>🚗 MY CAR COST</h1>
+  <p>奥川博士さんの車両費用ダッシュボード</p>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('overview')">サマリー</button>
+  <button class="tab-btn" onclick="switchTab('history')">履歴</button>
+  <button class="tab-btn" onclick="switchTab('current')">現在の車</button>
+  <button class="tab-btn" onclick="switchTab('tips')">節約アドバイス</button>
+</div>
+
+<!-- === OVERVIEW === -->
+
+<div id="tab-overview" class="content active">
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">総支出累計</div>
+      <div class="card-value" style="font-size:20px;">¥7.35M</div>
+      <div class="card-sub">17年3ヶ月間</div>
+    </div>
+    <div class="card">
+      <div class="card-label">月平均費用</div>
+      <div class="card-value" style="font-size:20px;">¥16,719</div>
+      <div class="card-sub">205ヶ月分</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">現在の月額</div>
+      <div class="card-value" style="font-size:20px; color: var(--accent2);">¥11,783</div>
+      <div class="card-sub">ハリアーZLP</div>
+    </div>
+    <div class="card">
+      <div class="card-label">所有台数</div>
+      <div class="card-value" style="font-size:20px;">5台</div>
+      <div class="card-sub">2009年〜現在</div>
+    </div>
+  </div>
+
+  <div class="section-title">車別 月額費用の比較</div>
+  <div class="card">
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">ヴェルファイア</div>
+        <div class="bar-track"><div class="bar-fill" style="width:73%; background: var(--muted);"></div></div>
+        <div class="bar-val">¥15,000</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ヴォクシー</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%; background: var(--danger);"></div></div>
+        <div class="bar-val">¥20,470</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ハリアーG</div>
+        <div class="bar-track"><div class="bar-fill" style="width:19%; background: var(--accent);"></div></div>
+        <div class="bar-val">¥3,889</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ハリアーZLP</div>
+        <div class="bar-track"><div class="bar-fill" style="width:58%; background: var(--accent2);"></div></div>
+        <div class="bar-val">¥11,783</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">RAV4（予定）</div>
+        <div class="bar-track"><div class="bar-fill" style="width:54%; background: #60a5fa;"></div></div>
+        <div class="bar-val">¥11,111</div>
+      </div>
+    </div>
+    <div class="card-sub" style="margin-top:10px;">※ハリアーGが最も月額低 ✅</div>
+  </div>
+
+  <div class="section-title">年間費用トレンド（累計）</div>
+  <div class="card">
+    <div class="proj-chart" id="trendChart"></div>
+    <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
+      <span style="font-size:10px; color:var(--muted);">■ <span style="color:var(--muted)">過去</span></span>
+      <span style="font-size:10px; color:var(--muted);">■ <span style="color:var(--accent2)">現在</span></span>
+      <span style="font-size:10px; color:var(--muted);">■ <span style="color:#60a5fa">予測</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- === HISTORY === -->
+
+<div id="tab-history" class="content">
+  <div class="section-title">所有車両の変遷</div>
+  <div class="timeline">
+
+```
+<div class="tl-item">
+  <div style="position:relative;">
+    <div class="tl-dot past"></div>
+    <div class="tl-line"></div>
+  </div>
+  <div class="tl-body">
+    <div class="tl-name">ヴェルファイア <span class="badge badge-ok">売却済</span></div>
+    <div class="tl-period">2009.7 〜 2014.3（5年0ヶ月）</div>
+    <div class="tl-cost">総額 ¥900,000 / 月¥15,000</div>
+    <div class="tl-detail">
+      車体 ¥3,140,000　部品 ¥370,000<br>
+      整備費 ¥20,000（オイル）<br>
+      下取 ▲¥2,680,000<br>
+      購入時追い金 ¥3,510,000　ひろし出費 ¥370,000
+    </div>
+  </div>
+</div>
+
+<div class="tl-item">
+  <div style="position:relative;">
+    <div class="tl-dot past"></div>
+    <div class="tl-line"></div>
+  </div>
+  <div class="tl-body">
+    <div class="tl-name">ヴォクシー <span class="badge badge-red">月額最高</span></div>
+    <div class="tl-period">2014.7 〜 2021.3（6年8ヶ月）</div>
+    <div class="tl-cost">総額 ¥1,637,594 / 月¥20,470</div>
+    <div class="tl-detail">
+      車体 ¥3,023,324　ナビ ¥117,000<br>
+      整備費 ¥25,000（オイル）+ ¥34,000（タイヤ交換）<br>
+      下取 ▲¥1,812,470<br>
+      追い金 ¥615,194
+    </div>
+  </div>
+</div>
+
+<div class="tl-item">
+  <div style="position:relative;">
+    <div class="tl-dot past"></div>
+    <div class="tl-line"></div>
+  </div>
+  <div class="tl-body">
+    <div class="tl-name">ハリアーG <span class="badge badge-ok">月額最安 ✅</span></div>
+    <div class="tl-period">2021.3 〜 2023.7（2年4ヶ月）</div>
+    <div class="tl-cost">総額 ¥112,768 / 月¥3,889</div>
+    <div class="tl-detail">
+      車体 ¥3,302,470　ナビ ¥100,298　用品 ¥5,000<br>
+      整備費 ¥5,000（オイル）<br>
+      下取 ▲¥3,300,000<br>
+      追い金 ¥112,768
+    </div>
+  </div>
+</div>
+
+<div class="tl-item">
+  <div style="position:relative;">
+    <div class="tl-dot current"></div>
+    <div class="tl-line"></div>
+  </div>
+  <div class="tl-body">
+    <div class="tl-name">ハリアーZLP <span class="badge badge-warn">現在</span></div>
+    <div class="tl-period">2023.7 〜 2026.7予定（3年0ヶ月）</div>
+    <div class="tl-cost">総額 ¥377,060 / 月¥11,783</div>
+    <div class="tl-detail">
+      車体 ¥4,100,000　用品 ¥31,710<br>
+      自動車保険選付 ▲¥8,650　自動車税 ▲¥45,000<br>
+      下取 ▲¥3,800,000（保険で80万円）<br>
+      追い金 ¥377,060
+    </div>
+  </div>
+</div>
+
+<div class="tl-item">
+  <div style="position:relative;">
+    <div class="tl-dot" style="background:#60a5fa;"></div>
+  </div>
+  <div class="tl-body">
+    <div class="tl-name">RAV4アドベンチャー <span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;">予定</span></div>
+    <div class="tl-period">2026.7 〜（0ヶ月〜）</div>
+    <div class="tl-cost">総額 ¥400,000予定 / 月¥11,111</div>
+    <div class="tl-detail">
+      車体 ¥4,600,000<br>
+      60ヶ月予定
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <div class="section-title">費用比較テーブル</div>
+  <div class="card" style="overflow-x:auto; padding:0;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>車種</th>
+          <th>年数</th>
+          <th>総費用</th>
+          <th>月額</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ヴェルファイア</td><td>5年0ヶ月</td><td class="num">¥900,000</td><td class="num" style="color:var(--muted)">¥15,000</td></tr>
+        <tr><td>ヴォクシー</td><td>6年8ヶ月</td><td class="num">¥1,637,594</td><td class="num" style="color:var(--danger)">¥20,470</td></tr>
+        <tr><td>ハリアーG</td><td>2年5ヶ月</td><td class="num">¥112,768</td><td class="num" style="color:var(--accent)">¥3,889</td></tr>
+        <tr><td>ハリアーZLP</td><td>2年8ヶ月</td><td class="num">¥377,060</td><td class="num" style="color:var(--accent2)">¥11,783</td></tr>
+        <tr><td>RAV4（予定）</td><td>5年</td><td class="num">¥400,000</td><td class="num" style="color:#60a5fa">¥11,111</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- === CURRENT === -->
+
+<div id="tab-current" class="content">
+  <div class="current-car-banner">
+    <div class="label">現在の愛車</div>
+    <div class="name">ハリアーZLP</div>
+    <div class="period">2023年7月〜（2年8ヶ月目） <span class="badge badge-warn">令和8年7月 乗り換え予定</span></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">追い金（実費）</div>
+      <div class="card-value" style="font-size:18px;">¥377,060</div>
+      <div class="card-sub">32ヶ月で割ると</div>
+    </div>
+    <div class="card">
+      <div class="card-label">月換算</div>
+      <div class="card-value" style="font-size:18px; color:var(--accent2);">¥11,783</div>
+      <div class="card-sub">/月</div>
+    </div>
+  </div>
+
+  <div class="section-title">乗り換え費用の内訳（ヴェルファイア乗り換え時参考）</div>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <table class="data-table">
+      <thead><tr><th>項目</th><th>内容</th><th>金額</th></tr></thead>
+      <tbody>
+        <tr><td>車検代</td><td>5回</td><td class="num">¥600,000</td></tr>
+        <tr><td>タイヤ代</td><td>2回</td><td class="num">¥200,000</td></tr>
+        <tr><td>オイルエレメント交換</td><td>1回 ¥5,000</td><td class="num">¥65,000</td></tr>
+        <tr><td>バッテリー交換</td><td>2回</td><td class="num">¥60,000</td></tr>
+        <tr><td>その他維持費</td><td>消耗品</td><td class="num">¥100,000</td></tr>
+        <tr><td style="color:var(--accent)">下取</td><td></td><td class="num" style="color:var(--accent)">▲¥100,000</td></tr>
+        <tr style="background:var(--surface2)"><td colspan="2"><strong>合計①</strong></td><td class="num"><strong>¥4,435,000</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">ハリアーG乗り換え時（精算時の出費）</div>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <table class="data-table">
+      <thead><tr><th>項目</th><th>内容</th><th>金額</th></tr></thead>
+      <tbody>
+        <tr><td>車検代</td><td>1回</td><td class="num">¥65,000</td></tr>
+        <tr><td>タイヤ交換</td><td>1回</td><td class="num">¥80,000</td></tr>
+        <tr><td>オイルエレメント交換</td><td>オイル等</td><td class="num">¥10,000</td></tr>
+        <tr><td>バッテリー交換</td><td>1回</td><td class="num">¥20,000</td></tr>
+        <tr><td>その他維持費</td><td>消耗品</td><td class="num">¥0</td></tr>
+        <tr><td style="color:var(--accent)">売却予想（令和8年3月）</td><td>本体7掛け</td><td class="num" style="color:var(--accent)">▲¥2,385,438</td></tr>
+        <tr style="background:var(--surface2)"><td colspan="2"><strong>合計②</strong></td><td class="num"><strong>¥1,197,330</strong></td></tr>
+        <tr style="background:var(--surface2)"><td colspan="2"><strong>精算時の出費</strong></td><td class="num" style="color:var(--accent2)"><strong>¥5,632,330</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:4px;">
+    <div class="card-label">月額換算（精算時）</div>
+    <div class="card-value">¥27,474</div>
+    <div class="card-sub">※ 乗り換えコスト含む実コスト</div>
+  </div>
+</div>
+
+<!-- === TIPS === -->
+
+<div id="tab-tips" class="content">
+
+  <div class="section-title">💡 費用を抑えるアドバイス</div>
+
+  <div class="tip-card">
+    <div class="tip-icon">⏳</div>
+    <div>
+      <div class="tip-title">乗り換えサイクルを伸ばす</div>
+      <div class="tip-body">
+        データを見ると、ハリアーGの時が月額¥3,889と最安でした。乗り換え時の「追い金」と「乗り換え諸費用」が最大のコスト。現在のハリアーZLPをあと1〜2年長く乗ることで、月換算コストを下げられます。
+      </div>
+      <div class="tip-save">推定節約: 月 ▲¥3,000〜5,000</div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">🔧</div>
+    <div>
+      <div class="tip-title">車検・オイル交換を安く抑える</div>
+      <div class="tip-body">
+        ディーラー車検（¥120,000前後）→ 民間車検場（¥60,000〜80,000）に切り替えるだけで大幅節約。オイルはカー用品店でセルフ交換なら¥2,000前後。年間¥3〜5万の節約が可能。
+      </div>
+      <div class="tip-save">推定節約: 年 ▲¥30,000〜50,000</div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">🛡️</div>
+    <div>
+      <div class="tip-title">任意保険を見直す</div>
+      <div class="tip-body">
+        自動車保険はディーラー経由より代理店・ネット直販が安い場合が多い。現在の保険料と補償内容を年1回見直すだけで年間¥2〜4万節約できることも。
+      </div>
+      <div class="tip-save">推定節約: 年 ▲¥20,000〜40,000</div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">📉</div>
+    <div>
+      <div class="tip-title">RAV4への乗り換えタイミングを再考</div>
+      <div class="tip-body">
+        令和8年7月（2026年7月）予定のRAV4乗り換えは月¥11,111。精算時出費¥5,632,330は大きい。ハリアーZLPをあと1〜2年長く乗り、下取り価格が下がりすぎる前に売るタイミングを見極めることが重要。
+      </div>
+      <div class="tip-save">推定節約: 総額 ▲¥200,000〜400,000</div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">⛽</div>
+    <div>
+      <div class="tip-title">燃費を意識した走り方</div>
+      <div class="tip-body">
+        ハリアーZLPはガソリン車。急加速・急ブレーキを避け、エアコン設定を1℃上げるだけで燃費が約3〜5%改善。月¥5,000〜8,000のガソリン代なら年間¥3,000〜5,000の節約に。
+      </div>
+      <div class="tip-save">推定節約: 年 ▲¥3,000〜5,000</div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">🏷️</div>
+    <div>
+      <div class="tip-title">タイヤは比較購入する</div>
+      <div class="tip-body">
+        タイヤは「タイヤホン」「オートウェイ」などネット購入→近所のGSや量販店で持ち込み交換が最安。ディーラー購入比で1本あたり¥5,000〜10,000安くなることも。4本で¥2〜4万の差。
+      </div>
+      <div class="tip-save">推定節約: 交換時 ▲¥20,000〜40,000</div>
+    </div>
+  </div>
+
+  <div class="section-title">📊 アクションプラン</div>
+  <div class="card">
+    <div style="line-height:2; font-size:13px;">
+      <div>✅ <strong>今すぐ:</strong> 保険の一括比較（インズウェブ等）</div>
+      <div>📅 <strong>3ヶ月以内:</strong> 次回車検の見積もりを複数取る</div>
+      <div>🗓️ <strong>乗り換え前:</strong> 下取り vs. 個人売却の価格差を比較</div>
+      <div>🔍 <strong>定期的に:</strong> タイヤ・バッテリー価格をネットで比較</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Trend bar chart
+const cars = [
+  { label: 'ヴェルファ', months: 60, monthly: 15000, color: 'var(--muted)' },
+  { label: 'ヴォクシー', months: 80, monthly: 20470, color: 'var(--danger)' },
+  { label: 'ハリアーG', months: 29, monthly: 3889, color: 'var(--accent)' },
+  { label: 'ハリアーZ', months: 32, monthly: 11783, color: 'var(--accent2)' },
+  { label: 'RAV4', months: 60, monthly: 11111, color: '#60a5fa' },
+];
+const maxM = Math.max(...cars.map(c => c.monthly));
+const chart = document.getElementById('trendChart');
+cars.forEach(c => {
+  const h = Math.round((c.monthly / maxM) * 90);
+  const col = document.createElement('div');
+  col.className = 'proj-col';
+  col.innerHTML = `<div class="proj-bar" style="height:${h}px; background:${c.color};"></div><div class="proj-label">${c.label}</div>`;
+  chart.appendChild(col);
+});
+</script>
+
+</body>
+</html>
